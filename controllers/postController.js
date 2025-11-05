@@ -123,6 +123,50 @@ export const getPendingPosts = async (req, res) => {
   }
 };
 
+export const updatePost = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { message } = req.body;
+    const postRef = db.collection("posts").doc(id);
+
+    // Check if post exists
+    const postDoc = await postRef.get();
+    if (!postDoc.exists) {
+      return res.status(404).json({ success: false, error: "Post not found" });
+    }
+
+    const postData = postDoc.data();
+
+    // Check if user owns the post or is admin
+    if (postData.userId !== req.user.uid && req.user.role !== "admin") {
+      return res.status(403).json({ 
+        success: false, 
+        error: "You don't have permission to update this post" 
+      });
+    }
+
+    // Update the post
+    await postRef.update({
+      message,
+      updatedAt: Timestamp.now()
+    });
+
+    res.json({ 
+      success: true, 
+      message: "Post updated successfully",
+      post: {
+        id,
+        message,
+        updatedAt: Timestamp.now()
+      }
+    });
+
+  } catch (error) {
+    console.error("Error updating post:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // Get all posts (only approved ones for normal users)
 export const getPosts = async (req, res) => {
   try {

@@ -1,4 +1,8 @@
 import express from "express";
+import { moderationLimiter } from '../middlewares/rateLimiter.js';
+import  contentFilter  from '../middlewares/contentFilter.js';
+import { verifyToken } from "../middlewares/authMiddleware.js";
+
 import {
   createPost,
   getPosts,
@@ -7,13 +11,15 @@ import {
   approvePost,
   rejectPost,
   getPendingPosts,
+  updatePost,
 } from "../controllers/postController.js";
-import { verifyToken } from "../middlewares/authMiddleware.js";
+
 
 const router = express.Router();
 
 // Create a post (user submits, goes to pending)
-router.post("/", verifyToken, createPost);
+router.post('/create', verifyToken, moderationLimiter, contentFilter, createPost);
+router.put('/update/:id', verifyToken, moderationLimiter, contentFilter, updatePost);
 
 // Get all approved posts
 router.get("/", getPosts);
