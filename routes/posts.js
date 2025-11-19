@@ -1,5 +1,5 @@
 import express from "express";
-import { moderationLimiter } from '../middlewares/rateLimiter.js';
+import moderationLimiter from '../middlewares/rateLimiter.js';
 import  contentFilter  from '../middlewares/contentFilter.js';
 import { verifyToken } from "../middlewares/authMiddleware.js";
 
