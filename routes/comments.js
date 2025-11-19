@@ -6,10 +6,10 @@ import {
 } from "../controllers/commentController.js";
 import { verifyToken } from "../middlewares/authMiddleware.js";
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true }); ;
 
-router.post("/:postId/comments", verifyToken, addComment);
-router.get("/:postId/comments", getComments);
-router.delete("/:postId/comments/:commentId", verifyToken, deleteComment);
+router.post("/", verifyToken, addComment);
+router.get("/", getComments);
+router.delete("/:commentId", verifyToken, deleteComment);
 
 export default router;

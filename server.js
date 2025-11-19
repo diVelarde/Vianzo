@@ -23,7 +23,7 @@ const PORT = process.env.PORT || 5000;
 
 // Basic middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.use(express.json({ limit: "10kb" }));
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(moderationLimiter);
@@ -31,7 +31,7 @@ app.use(moderationLimiter);
 // API prefix and route mounts
 const API_PREFIX = "/api/v1";
 app.use(`${API_PREFIX}/posts`, postsRouter);
-app.use(`${API_PREFIX}/posts`, commentsRouter);
+app.use(`${API_PREFIX}/posts/:postId/comments`, commentsRouter);
 app.use(`${API_PREFIX}/users`, usersRouter);
 app.use(`${API_PREFIX}/reactions`, reactionRoutes);
 app.use(`${API_PREFIX}/leaderboard`, leaderboardRoutes);
