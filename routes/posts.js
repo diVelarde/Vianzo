@@ -18,13 +18,14 @@ import {
 const router = express.Router();
 
 // Get all approved posts
-router.get("/", getPosts);
+router.get("/", (req, res) => res.json([{ id: 1, content: "Test post" }]));
 
 // Create a post (user submits, goes to pending)
 router.post('/create', verifyToken, moderationLimiter, contentFilter, createPost);
 router.put('/update/:id', verifyToken, moderationLimiter, contentFilter, updatePost);
 
 // Get a single post
+
 router.get("/:postId", getSinglePost);
 
 // Get post details with comments
