@@ -16,6 +16,9 @@ import moderationLimiter from "./middlewares/rateLimiter.js";
 import { errorHandler, notFound } from "./middlewares/errorHandler.js"; // create this file
 import "./config/firebase.js"; // ensure firebase/init runs
 
+import path from "path";
+import { fileURLToPath } from "url";
+
 dotenv.config();
 
 const app = express();
@@ -25,6 +28,16 @@ const API_PREFIX = process.env.API_PREFIX || "/api/v1";
 
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.FRONTEND_URL || "https://vianzotech.onrender.com";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static frontend
+app.use(express.static(path.join(__dirname, "dist")));
+
+// Catch-all: return React index.html for any non-API route
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
+});
 app.use(helmet());
 
 if (process.env.NODE_ENV !== "production") {
