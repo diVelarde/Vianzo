@@ -26,7 +26,7 @@ const PORT = process.env.PORT || 5000;
 
 const API_PREFIX = process.env.API_PREFIX || "/api/v1";
 
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.FRONTEND_URL || "https://vianzotech.onrender.com";
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.FRONTEND_URL || "https://vianzo-whispernet.onrender.com";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,10 +34,6 @@ const __dirname = path.dirname(__filename);
 // Serve static frontend
 app.use(express.static(path.join(__dirname, "dist")));
 
-// Catch-all: return React index.html for any non-API route
-app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
-});
 app.use(helmet());
 
 if (process.env.NODE_ENV !== "production") {
@@ -113,6 +109,11 @@ app.get("/__routes", (req, res) => {
     console.error("ERROR building __routes:", err);
     return res.status(500).json({ ok: false, error: String(err) });
   }
+});
+
+// Catch-all: return React index.html for any non-API route
+app.get(/.*/, (req, res) => {
+  res.sendFile(path.join(__dirname, "dist", "index.html"));
 });
 
 // 404 + centralized error handler
