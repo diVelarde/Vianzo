@@ -1,18 +1,29 @@
-export const notFound = (req, res, next) => {
+export function notFound(req, res, next) {
   res.status(404).json({
-    success: false,
-    message: `Not Found - ${req.originalUrl}`
+    error: { message: 'Not Found', status: 404 }
   });
-};
+}
 
-export const errorHandler = (err, req, res, next) => {
-  console.error(err.stack);
+export function errorHandler(err, req, res, next) {
+  // Log the error for debugging (server-side)
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err);
+  }
 
-  const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
+  const status = err?.status || err?.statusCode || 500;
+  const message = err?.message || 'Internal Server Error';
 
-  res.status(statusCode).json({
-    success: false,
-    message: err.message || "Internal Server Error",
-    stack: process.env.NODE_ENV === "production" ? null : err.stack
-  });
-};
+  const payload = {
+    error: {
+      message,
+      status
+    }
+  };
+
+  // In non-production environments include stack for easier debugging
+  if (process.env.NODE_ENV !== 'production') {
+    payload.error.stack = err?.stack;
+  }
+
+  res.status(status).json(payload);
+}
