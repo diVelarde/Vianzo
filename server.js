@@ -21,39 +21,27 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// use a configurable API prefix so frontend/clients can either use /api/v1 or root routes
 const API_PREFIX = process.env.API_PREFIX || "/api/v1";
 
-// Allow the frontend origin to be configured via env (falls back to allowing same origin for dev)
 const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.FRONTEND_URL || "https://vianzotech.onrender.com";
 
-// Basic middleware
 app.use(helmet());
 
-// Configure CORS to accept the configured frontend origin (and allow preflight)
-app.use(cors({
-  origin: (origin, callback) => {
-    // allow requests with no origin (e.g. curl, mobile apps)
-    if (!origin) return callback(null, true);
-    // allow configured frontend origin or if FRONTEND_ORIGIN is "*" allow everything
-    if (FRONTEND_ORIGIN === "*" || origin === FRONTEND_ORIGIN) return callback(null, true);
-    // otherwise reject
-    return callback(new Error(`CORS policy: origin ${origin} not allowed`));
-  },
-  credentials: true,
-  methods: ["GET","HEAD","PUT","PATCH","POST","DELETE","OPTIONS"],
-  allowedHeaders: ["Content-Type","Authorization","Accept","X-Requested-With"]
-}));
+if (process.env.NODE_ENV !== "production") {
+  app.use(cors({ origin: true, credentials: true }));
+} else {
+  app.use(cors({
+    origin: FRONTEND_ORIGIN,
+    credentials: true
+  }));
+}
 
-// parse JSON with a reasonably small limit
 app.use(express.json({ limit: process.env.JSON_LIMIT || "10kb" }));
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 
-// rate limiter that protects moderation routes / global actions
 app.use(moderationLimiter);
 
-// --- Diagnostics: log router variables and types before mounting ---
-// This helps reveal if imports are undefined, null, or not Routers.
+
 console.log("DEBUG: Router imports:");
 console.log(" postsRouter:", !!postsRouter, typeof postsRouter, Object.keys(postsRouter || {}));
 console.log(" commentsRouter:", !!commentsRouter, typeof commentsRouter, Object.keys(commentsRouter || {}));
@@ -63,7 +51,6 @@ console.log(" leaderboardRoutes:", !!leaderboardRoutes, typeof leaderboardRoutes
 console.log(" searchRoutes:", !!searchRoutes, typeof searchRoutes, Object.keys(searchRoutes || {}));
 console.log(" incognitoRoutes:", !!incognitoRoutes, typeof incognitoRoutes, Object.keys(incognitoRoutes || {}));
 
-// Mount routes both under API_PREFIX and also at root equivalents for compatibility
 try {
   app.use(`${API_PREFIX}/posts`, postsRouter);
   app.use(`/posts`, postsRouter);
@@ -86,15 +73,12 @@ try {
   app.use(`${API_PREFIX}/incognito`, incognitoRoutes);
   app.use(`/incognito`, incognitoRoutes);
 } catch (err) {
-  // If a router mount throws synchronously, we log it so Render logs capture the failure.
   console.error("ERROR mounting routers:", err && err.stack ? err.stack : err);
 }
 
-// Health endpoints (short and prefixed)
 app.get("/health", (req, res) => res.status(200).json({ status: "ok" }));
 app.get(`${API_PREFIX}/health`, (req, res) => res.status(200).json({ status: "ok", prefix: API_PREFIX }));
 
-// expose a quick diagnostics endpoint to list mounted routes (useful for debugging)
 app.get("/__routes", (req, res) => {
   try {
     const routes = [];
