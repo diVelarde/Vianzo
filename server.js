@@ -25,7 +25,7 @@ const PORT = process.env.PORT || 5000;
 const API_PREFIX = process.env.API_PREFIX || "/api/v1";
 
 // Allow the frontend origin to be configured via env (falls back to allowing same origin for dev)
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.FRONTEND_URL || "https://vianzo-whispernet.onrender.com";
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.FRONTEND_URL || "https://vianzotech.onrender.com";
 
 // Basic middleware
 app.use(helmet());
@@ -52,34 +52,43 @@ app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 // rate limiter that protects moderation routes / global actions
 app.use(moderationLimiter);
 
+// --- Diagnostics: log router variables and types before mounting ---
+// This helps reveal if imports are undefined, null, or not Routers.
+console.log("DEBUG: Router imports:");
+console.log(" postsRouter:", !!postsRouter, typeof postsRouter, Object.keys(postsRouter || {}));
+console.log(" commentsRouter:", !!commentsRouter, typeof commentsRouter, Object.keys(commentsRouter || {}));
+console.log(" usersRouter:", !!usersRouter, typeof usersRouter, Object.keys(usersRouter || {}));
+console.log(" reactionRoutes:", !!reactionRoutes, typeof reactionRoutes, Object.keys(reactionRoutes || {}));
+console.log(" leaderboardRoutes:", !!leaderboardRoutes, typeof leaderboardRoutes, Object.keys(leaderboardRoutes || {}));
+console.log(" searchRoutes:", !!searchRoutes, typeof searchRoutes, Object.keys(searchRoutes || {}));
+console.log(" incognitoRoutes:", !!incognitoRoutes, typeof incognitoRoutes, Object.keys(incognitoRoutes || {}));
+
 // Mount routes both under API_PREFIX and also at root equivalents for compatibility
-// This makes it easier for frontends that expect /posts (no prefix) or /api/v1/posts.
-//
-// Examples:
-//  - /api/v1/posts
-//  - /posts
-//  - /api/v1/posts/:postId/comments
-//  - /posts/:postId/comments
-app.use(`${API_PREFIX}/posts`, postsRouter);
-app.use(`/posts`, postsRouter);
+try {
+  app.use(`${API_PREFIX}/posts`, postsRouter);
+  app.use(`/posts`, postsRouter);
 
-app.use(`${API_PREFIX}/posts/:postId/comments`, commentsRouter);
-app.use(`/posts/:postId/comments`, commentsRouter);
+  app.use(`${API_PREFIX}/posts/:postId/comments`, commentsRouter);
+  app.use(`/posts/:postId/comments`, commentsRouter);
 
-app.use(`${API_PREFIX}/users`, usersRouter);
-app.use(`/users`, usersRouter);
+  app.use(`${API_PREFIX}/users`, usersRouter);
+  app.use(`/users`, usersRouter);
 
-app.use(`${API_PREFIX}/reactions`, reactionRoutes);
-app.use(`/reactions`, reactionRoutes);
+  app.use(`${API_PREFIX}/reactions`, reactionRoutes);
+  app.use(`/reactions`, reactionRoutes);
 
-app.use(`${API_PREFIX}/leaderboard`, leaderboardRoutes);
-app.use(`/leaderboard`, leaderboardRoutes);
+  app.use(`${API_PREFIX}/leaderboard`, leaderboardRoutes);
+  app.use(`/leaderboard`, leaderboardRoutes);
 
-app.use(`${API_PREFIX}/search`, searchRoutes);
-app.use(`/search`, searchRoutes);
+  app.use(`${API_PREFIX}/search`, searchRoutes);
+  app.use(`/search`, searchRoutes);
 
-app.use(`${API_PREFIX}/incognito`, incognitoRoutes);
-app.use(`/incognito`, incognitoRoutes);
+  app.use(`${API_PREFIX}/incognito`, incognitoRoutes);
+  app.use(`/incognito`, incognitoRoutes);
+} catch (err) {
+  // If a router mount throws synchronously, we log it so Render logs capture the failure.
+  console.error("ERROR mounting routers:", err && err.stack ? err.stack : err);
+}
 
 // Health endpoints (short and prefixed)
 app.get("/health", (req, res) => res.status(200).json({ status: "ok" }));
@@ -95,13 +104,16 @@ app.get("/__routes", (req, res) => {
           const methods = Object.keys(mw.route.methods).join(",").toUpperCase();
           routes.push({ path: mw.route.path, methods });
         } else if (mw.name === "router" && mw.regexp) {
-          // router mount; try to stringify, but it's ok if not perfect
-          routes.push({ mount: String(mw.regexp) });
+          // router mount; stringify regexp for visibility
+          routes.push({ mount: mw.regexp?.toString?.() || "<router>" });
         }
       });
     }
+    // Also log to stdout to capture in container logs
+    console.log("DEBUG: mounted routes snapshot:", JSON.stringify(routes, null, 2));
     return res.json({ ok: true, apiPrefix: API_PREFIX, FRONTEND_ORIGIN, routes });
   } catch (err) {
+    console.error("ERROR building __routes:", err);
     return res.status(500).json({ ok: false, error: String(err) });
   }
 });

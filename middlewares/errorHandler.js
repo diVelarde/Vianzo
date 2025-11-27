@@ -1,29 +1,25 @@
+// Minimal centralized error handling middleware used by index.js
 export function notFound(req, res, next) {
-  res.status(404).json({
-    error: { message: 'Not Found', status: 404 }
-  });
+  res.status(404);
+  // respond with JSON for API paths, HTML for normal requests
+  if (req.originalUrl && req.originalUrl.startsWith("/api")) {
+    return res.json({ success: false, message: `Not Found - ${req.originalUrl}` });
+  }
+  // fallback
+  res.type("txt").send("Not Found");
 }
 
 export function errorHandler(err, req, res, next) {
-  // Log the error for debugging (server-side)
-  if (process.env.NODE_ENV !== 'production') {
-    console.error(err);
+  console.error("ERROR HANDLER:", err && err.stack ? err.stack : err);
+  const status = res.statusCode && res.statusCode !== 200 ? res.statusCode : 500;
+  res.status(status);
+  if (req.originalUrl && req.originalUrl.startsWith("/api")) {
+    return res.json({
+      success: false,
+      message: err.message || "Internal Server Error",
+      // expose stack in non-production only
+      ...(process.env.NODE_ENV !== "production" ? { stack: err.stack } : {}),
+    });
   }
-
-  const status = err?.status || err?.statusCode || 500;
-  const message = err?.message || 'Internal Server Error';
-
-  const payload = {
-    error: {
-      message,
-      status
-    }
-  };
-
-  // In non-production environments include stack for easier debugging
-  if (process.env.NODE_ENV !== 'production') {
-    payload.error.stack = err?.stack;
-  }
-
-  res.status(status).json(payload);
+  res.type("txt").send(err.message || "Internal Server Error");
 }
