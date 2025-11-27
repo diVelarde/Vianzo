@@ -25,7 +25,7 @@ const PORT = process.env.PORT || 5000;
 const API_PREFIX = process.env.API_PREFIX || "/api/v1";
 
 // Allow the frontend origin to be configured via env (falls back to allowing same origin for dev)
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.FRONTEND_URL || "https://vianzotech.onrender.com";
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.FRONTEND_URL || "https://vianzo-whispernet.onrender.com";
 
 // Basic middleware
 app.use(helmet());
