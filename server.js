@@ -23,7 +23,11 @@ const PORT = process.env.PORT || 5000;
 
 // Basic middleware
 app.use(helmet());
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+app.use(cors({
+  origin: "https://base44.app", // only allow your frontend
+  credentials: true
+}));
+
 app.use(express.json({ limit: "10kb" }));
 app.use(morgan(process.env.NODE_ENV === "production" ? "combined" : "dev"));
 app.use(moderationLimiter);

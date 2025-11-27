@@ -17,12 +17,12 @@ import {
 
 const router = express.Router();
 
+// Get all approved posts
+router.get("/", getPosts);
+
 // Create a post (user submits, goes to pending)
 router.post('/create', verifyToken, moderationLimiter, contentFilter, createPost);
 router.put('/update/:id', verifyToken, moderationLimiter, contentFilter, updatePost);
-
-// Get all approved posts
-router.get("/", getPosts);
 
 // Get a single post
 router.get("/:postId", getSinglePost);
