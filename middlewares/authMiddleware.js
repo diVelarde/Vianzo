@@ -1,9 +1,5 @@
 import { db } from "../config/firebase.js";
-import { Timestamp } from "../config/firebase.js";
 
-/**
- * Middleware to verify Firebase ID token and attach decoded user info to req.user
- */
 export const verifyToken = async (req, res, next) => {
   try {
     if (process.env.LOCAL_TEST === "true") {

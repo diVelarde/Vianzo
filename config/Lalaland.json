@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "itmc304-lalaland-project",
+  "private_key_id": "49b6c51544eb1f429fc66e5f17ca3beb1f35582b",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCOcEErnmeQcsqO\nJW1RkY9tQVlO+teVVxiqo9+1+anXb79HbpiZRlfsxui/DvIAVcO+pELjFx9vdPvr\nWE9y/XU6J8z3qbEmd/U4PGZ/5oOfaS7y6+h0hbdcF7tOCRjqoIP8m1b+/p9ckEWB\nO/Vm13mAweUxRNP00T4E0s6eRYaZlWpJnMlmTA6YqUttoO/LYxV6Ai7dXn3eTSQp\nivhZEc53Ew0mLtZVsCmEVuyJ1VOj+XjXVy8fThBixgWZfoYZN5MkaPk2/qpilaGs\nXyO9smxeDxhv65w2KioQLel0szSnlYB7znxSArYNxSgiFdjbmXrdnQEfwjxdM5jV\nZQIi+csBAgMBAAECggEABb+oEa+Z9G19mVEPYWxjgoBRr2tWShOyzihA/iIuZaB/\n8s0W4ZDCOa8pc5SR1cugU9BjVrD3NtNc23m78yMhmRBEKHazzJ6oyfU+Gcle5I8l\nMu6seg9vgAsBJzwcwlNqIEbQswfpvJ2iAH5AAD+QCs9Ihb2GZGoRe7ZaWm7p6Mbc\nkHKRT9VFUbXMkOosetZOOoCi4G0VLUIKvNe0l2UFrADyjV58usxxT6zDFIx5utww\neldkAg7acSKmnBi/mFOPmGhmGEQLA+Vei6tbaDsIh0bkpe82xHFznH7I79LtYbZ5\nRXnFi3Xf9Vfm0GsTVXQkI2SrmZrU8hdzcpTyexgT8QKBgQDFBKme+Roia4YPxanm\nX00K8coFNm/rQnKy2RYty4qzqgBLSDOpYd2q5Bq1GCk2vgP2L+mej4bnNLnpNwgg\n5Qi24aY7DbkrbonKMFxSdTbT/TyS5LL168+AeeZyRn9yQ/7f/xN0E0yzSylLrcu0\nsjrJ06FwYMEuz8SmceWIejG8pQKBgQC5FKQEi1YCV52LVslQwLK7YSF6XasmqLRn\n7+rUIADCPTBR84+KIUuQU5LEboV32FHonZGJEM7CM0PJqB0wKFwp+7hWiROfrEpS\nsJNP622ual0HvPubMXV3jbk+mSoPkAb/V8EH7qDGJppMHWLYhSyYgBSiPOGkEA5+\n0pINWfF6LQKBgDqXUmJmrnECDRJvtEFAokbY9T1rnQkX78hkawYffBZGPmQlCsga\nxLNnttGYZ9lR1RfH0/BFutbThV5n8VDnDBpnLOpvAFx8ORoaG7qiBTYyH2uH+/jK\nsiEBH5logcpXklrHHt/sRWkktxk8jFImlvkiqOYkwA7N1yuwv5RA0r3JAoGAdkZL\nfp/wafTFuBrQ8esDDR3IQCOF0WG0UEuQnNiKw5ZIv8ZPL22RlXzi6ObcIjc6ONYh\nAB+ekZojMsZdSL4yD55OMfbNdJess2Ul7se7wt8z7lMF0yprL+iAvhExQNrArgLN\nV51WXuqiZgvNdCK+2gHXrcoMREUCjmdQcHnPCE0CgYBmrJh57+RYhCN0znXibRDP\nBE9W4DXriZZlZMdA9iJli4P1yvcndxtXf5FCyFc0B6HSUL1PprtwkbAV4izMeW1k\nero5V4PR4+viuNHSAoc5tmJBIWswDo74PtEblK8Tgj772nuuIkFWvzEoGw+Z1wAp\nRqrv4gKBVeGGZSru23gsRg==\n-----END PRIVATE KEY-----\n",
+  "client_email": "backend-admin@itmc304-lalaland-project.iam.gserviceaccount.com",
+  "client_id": "100071203353998704160",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/backend-admin%40itmc304-lalaland-project.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

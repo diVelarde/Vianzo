@@ -81,6 +81,64 @@ export const getUserById = async (req, res) => {
   }
 };
 
+// Helper function to calculate user stats
+export const calculateUserStats = async (userId) => {
+  let messages_posted = 0;
+  let total_likes_received = 0;
+  let popularity_score = 0;
+
+  // posts authored by user
+  const postsSnap = await db.collection("posts").where("userId", "==", userId).get();
+  messages_posted = postsSnap.size;
+  popularity_score += messages_posted * 5;
+
+  // Try collectionGroup for comments; if unsupported, fallback to scanning post subcollections
+  let commentsSnap;
+  try {
+    commentsSnap = await db.collectionGroup("comments").where("userId", "==", userId).get();
+  } catch (e) {
+    if (e?.code === 9 || String(e).includes("FAILED_PRECONDITION")) {
+      // Fallback: scan comments subcollections under posts and incognitoPosts
+      const commentDocs = [];
+      const postsAll = await db.collection("posts").get();
+      for (const p of postsAll.docs) {
+        const cs = await p.ref.collection("comments").where("userId", "==", userId).get();
+        commentDocs.push(...cs.docs);
+      }
+      try {
+        const incAll = await db.collection("incognitoPosts").get();
+        for (const p of incAll.docs) {
+          const cs = await p.ref.collection("comments").where("userId", "==", userId).get();
+          commentDocs.push(...cs.docs);
+        }
+      } catch (_) {
+        // ignore if incognitoPosts missing or inaccessible
+      }
+      commentsSnap = { size: commentDocs.length, docs: commentDocs };
+    } else {
+      throw e;
+    }
+  }
+
+  popularity_score += (commentsSnap?.size || 0) * 2;
+
+  // reactions on posts authored by this user
+  for (const postDoc of postsSnap.docs) {
+    const reactionsSnap = await postDoc.ref.collection("reactions").get();
+    total_likes_received += reactionsSnap.size;
+    popularity_score += reactionsSnap.size;
+  }
+
+  // reactions on comments authored by this user
+  for (const commentDoc of (commentsSnap?.docs || [])) {
+    const reactionsSnap = await commentDoc.ref.collection("reactions").get();
+    total_likes_received += reactionsSnap.size;
+    popularity_score += reactionsSnap.size;
+  }
+
+  return { messages_posted, total_likes_received, popularity_score };
+};
+
 export const getUserRankings = async (req, res) => {
   try {
     const usersSnap = await db.collection("users").get();
@@ -88,58 +146,12 @@ export const getUserRankings = async (req, res) => {
 
     for (const userDoc of usersSnap.docs) {
       const userId = userDoc.id;
-      let score = 0;
-
-      // posts authored by user
-      const postsSnap = await db.collection("posts").where("userId", "==", userId).get();
-      score += postsSnap.size * 5;
-
-      // Try collectionGroup for comments; if unsupported, fallback to scanning post subcollections
-      let commentsSnap;
-      try {
-        commentsSnap = await db.collectionGroup("comments").where("userId", "==", userId).get();
-      } catch (e) {
-        if (e?.code === 9 || String(e).includes("FAILED_PRECONDITION")) {
-          // Fallback: scan comments subcollections under posts and incognitoPosts
-          const commentDocs = [];
-          const postsAll = await db.collection("posts").get();
-          for (const p of postsAll.docs) {
-            const cs = await p.ref.collection("comments").where("userId", "==", userId).get();
-            commentDocs.push(...cs.docs);
-          }
-          try {
-            const incAll = await db.collection("incognitoPosts").get();
-            for (const p of incAll.docs) {
-              const cs = await p.ref.collection("comments").where("userId", "==", userId).get();
-              commentDocs.push(...cs.docs);
-            }
-          } catch (_) {
-            // ignore if incognitoPosts missing or inaccessible
-          }
-          commentsSnap = { size: commentDocs.length, docs: commentDocs };
-        } else {
-          throw e;
-        }
-      }
-
-      score += (commentsSnap?.size || 0) * 2;
-
-      // reactions on posts authored by this user
-      for (const postDoc of postsSnap.docs) {
-        const reactionsSnap = await postDoc.ref.collection("reactions").get();
-        score += reactionsSnap.size;
-      }
-
-      // reactions on comments authored by this user
-      for (const commentDoc of (commentsSnap?.docs || [])) {
-        const reactionsSnap = await commentDoc.ref.collection("reactions").get();
-        score += reactionsSnap.size;
-      }
+      const { popularity_score } = await calculateUserStats(userId);
 
       rankings.push({
         userId,
         username: userDoc.data().username || "Anonymous",
-        score,
+        score: popularity_score,
       });
     }
 

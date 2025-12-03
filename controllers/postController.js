@@ -170,16 +170,26 @@ export const updatePost = async (req, res) => {
 // Get all posts (only approved ones for normal users)
 export const getPosts = async (req, res) => {
   try {
-    // Fetch all posts (no composite index required)
-    const snapshot = await db.collection("posts").get();
+    const postRef = db.collection("posts");
+
+    // Fetch only approved posts
+    const snapshot = await postRef
+      .where("status", "==", "approved")
+      .orderBy("createdAt", "desc")
+      .get();
+
     let posts = await Promise.all(
       snapshot.docs.map(async (doc) => {
         const postData = doc.data();
-        const commentsSnapshot = await db
-          .collection("posts")
-          .doc(doc.id)
-          .collection("comments")
-          .get();
+
+        // Count comments if collection exists
+        let commentsCount = 0;
+        try {
+          const commentsSnapshot = await postRef.doc(doc.id).collection("comments").get();
+          commentsCount = commentsSnapshot.size;
+        } catch {
+          commentsCount = 0;
+        }
 
         return {
           id: doc.id,
@@ -187,15 +197,15 @@ export const getPosts = async (req, res) => {
           message: postData.message,
           createdAt: postData.createdAt,
           likes: postData.likes,
-          commentsCount: commentsSnapshot.size,
+          commentsCount,
           status: postData.status,
+          userId: postData.userId,
         };
       })
     );
 
-    // Optional in-memory filters/sorting (preserve original API query parameters)
-    const { status, q, sort } = req.query;
-    if (status) posts = posts.filter((p) => p.status === status);
+    // Optional search/filter from query
+    const { q, sort } = req.query;
     if (q) posts = posts.filter((p) => (p.message || "").toLowerCase().includes(q.toLowerCase()));
     if (sort === "new")
       posts = posts.sort((a, b) => {
@@ -203,22 +213,20 @@ export const getPosts = async (req, res) => {
         const bTs = b.createdAt?.toMillis?.() || 0;
         return bTs - aTs;
       });
+    else if (sort === "popular")
+      posts = posts.sort((a, b) => (b.likes || 0) - (a.likes || 0));
 
     return res.json({ success: true, posts });
   } catch (error) {
     console.error("Error fetching posts:", error);
-    const details = error?.details || error?.message || "";
-    const indexUrlMatch = String(details).match(/https:\/\/console\.firebase\.google\.com[^\s"]+/);
-    const indexUrl = indexUrlMatch ? indexUrlMatch[0] : null;
     return res.status(500).json({
       success: false,
       error: "Error fetching posts",
       message: error?.message,
-      code: error?.code || null,
-      indexCreationUrl: indexUrl,
     });
   }
 };
+
 
 export const getSinglePost = async (req, res) => {
   try {
