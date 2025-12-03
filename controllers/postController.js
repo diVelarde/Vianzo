@@ -1,6 +1,7 @@
 import { db } from "../config/firebase.js";
 import { Timestamp } from "firebase-admin/firestore";
 import { updatePopularity } from "../utils/updatePopularity.js";
+import { posts } from "../data.js";
 
 // Create a new post with auto-increment ID
 export const createPost = async (req, res) => {
@@ -11,24 +12,12 @@ export const createPost = async (req, res) => {
       return res.status(400).json({ success: false, error: "Message is required" });
     }
 
-    const counterRef = db.collection("counters").doc("postCounter");
-
-    const newPostId = await db.runTransaction(async (t) => {
-      const counterDoc = await t.get(counterRef);
-      let current = 0;
-      if (!counterDoc.exists) {
-        t.set(counterRef, { current: 1 });
-        current = 1;
-      } else {
-        current = counterDoc.data().current + 1;
-        t.update(counterRef, { current });
-      }
-
-      return current;
-    });
+    // Get the current count of posts for ID generation
+    const snapshot = await db.collection("posts").get();
+    const count = snapshot.size + 1;
 
     // Format postId like "Whispering #0001"
-    const formattedPostId = `Whispering #${String(newPostId).padStart(4, "0")}`;
+    const formattedPostId = `Whispering #${String(count).padStart(4, "0")}`;
 
     const userId = req.user?.uid || null;
 
@@ -38,17 +27,13 @@ export const createPost = async (req, res) => {
       createdAt: Timestamp.now(),
       likes: 0,
       commentsCount: 0,
-      status: "pending",
+      status: "approved", // Auto-approve for simplicity
       userId,
     };
 
-    const docRef = await db.collection("posts").add(newPost);
+    const newPostRef = await db.collection("posts").add(newPost);
 
-    if (userId) {
-      await updatePopularity(userId, 5);
-    }
-
-    res.status(201).json({ success: true, id: docRef.id, post: newPost });
+    res.status(201).json({ success: true, id: newPostRef.id, post: { id: newPostRef.id, ...newPost } });
   } catch (error) {
     console.error("Error creating post:", error);
     res.status(500).json({ success: false, error: error.message });
@@ -170,53 +155,17 @@ export const updatePost = async (req, res) => {
 // Get all posts (only approved ones for normal users)
 export const getPosts = async (req, res) => {
   try {
-    const postRef = db.collection("posts");
-
-    // Fetch only approved posts
-    const snapshot = await postRef
-      .where("status", "==", "approved")
-      .orderBy("createdAt", "desc")
-      .get();
-
-    let posts = await Promise.all(
-      snapshot.docs.map(async (doc) => {
-        const postData = doc.data();
-
-        // Count comments if collection exists
-        let commentsCount = 0;
-        try {
-          const commentsSnapshot = await postRef.doc(doc.id).collection("comments").get();
-          commentsCount = commentsSnapshot.size;
-        } catch {
-          commentsCount = 0;
-        }
-
-        return {
-          id: doc.id,
-          postId: postData.postId,
-          message: postData.message,
-          createdAt: postData.createdAt,
-          likes: postData.likes,
-          commentsCount,
-          status: postData.status,
-          userId: postData.userId,
-        };
-      })
-    );
+    let filteredPosts = posts.filter(p => p.status === "approved");
 
     // Optional search/filter from query
     const { q, sort } = req.query;
-    if (q) posts = posts.filter((p) => (p.message || "").toLowerCase().includes(q.toLowerCase()));
+    if (q) filteredPosts = filteredPosts.filter((p) => (p.message || "").toLowerCase().includes(q.toLowerCase()));
     if (sort === "new")
-      posts = posts.sort((a, b) => {
-        const aTs = a.createdAt?.toMillis?.() || 0;
-        const bTs = b.createdAt?.toMillis?.() || 0;
-        return bTs - aTs;
-      });
+      filteredPosts = filteredPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     else if (sort === "popular")
-      posts = posts.sort((a, b) => (b.likes || 0) - (a.likes || 0));
+      filteredPosts = filteredPosts.sort((a, b) => (b.likes || 0) - (a.likes || 0));
 
-    return res.json({ success: true, posts });
+    return res.json({ success: true, posts: filteredPosts });
   } catch (error) {
     console.error("Error fetching posts:", error);
     return res.status(500).json({
@@ -231,21 +180,18 @@ export const getPosts = async (req, res) => {
 export const getSinglePost = async (req, res) => {
   try {
     const { postId } = req.params;
-    const postRef = db.collection("posts").doc(postId);
-    const postDoc = await postRef.get();
+    const post = posts.find(p => p.id === postId);
 
-    if (!postDoc.exists) {
+    if (!post) {
       return res.status(404).json({ success: false, error: "Post not found" });
     }
 
-    const postData = postDoc.data();
-
     // 🔒 Only admins can view non-approved posts
-    if (postData.status !== "approved" && req.user.role !== "admin") {
+    if (post.status !== "approved" && req.user.role !== "admin") {
       return res.status(403).json({ success: false, error: "This post is not available" });
     }
 
-    res.json({ success: true, post: { id: postDoc.id, ...postData } });
+    res.json({ success: true, post });
   } catch (err) {
     console.error("Error fetching post:", err);
     res.status(500).json({ success: false, error: err.message });

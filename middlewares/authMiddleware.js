@@ -1,4 +1,5 @@
-import { db } from "../config/firebase.js";
+import { users } from "../data.js";
+import jwt from "jsonwebtoken";
 
 export const verifyToken = async (req, res, next) => {
   try {
@@ -12,8 +13,8 @@ export const verifyToken = async (req, res, next) => {
       return res.status(401).json({ success: false, error: "No token provided" });
     }
 
-    const idToken = authHeader.split("Bearer ")[1];
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const token = authHeader.split("Bearer ")[1];
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRET || 'secret');
 
     // base user from token
     const user = {
@@ -24,17 +25,17 @@ export const verifyToken = async (req, res, next) => {
       username: decodedToken.username || null,
     };
 
-    // if token has no role/admin, try to read Firestore users collection for role
+    // if token has no role/admin, try to read users array for role
     if (!user.role && !user.admin) {
       try {
-        const userDoc = await db.collection("users").doc(user.uid).get();
-        if (userDoc.exists) {
-          const data = userDoc.data();
-          user.role = data?.role || user.role;
-          if (data?.admin === true) user.admin = true;
+        const userData = users.find(u => u.id === user.uid);
+        if (userData) {
+          user.role = userData.role || user.role;
+          user.admin = userData.admin || user.admin;
+          user.username = userData.username || user.username;
         }
       } catch (e) {
-        console.warn("verifyToken: failed to read user doc for role fallback:", e?.message || e);
+        console.warn("verifyToken: failed to read user data for role fallback:", e?.message || e);
         // continue without failing auth
       }
     }

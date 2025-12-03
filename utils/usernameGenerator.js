@@ -1,5 +1,14 @@
-import { generateUsername } from "unique-username-generator";
+const verbs = [
+  "dwindling", "sparkling", "whispering", "roaring", "gleaming", "fading", "blooming", "crashing", "soaring", "whirling"
+];
+
+const nouns = [
+  "officer", "explorer", "guardian", "warrior", "scholar", "artist", "pilot", "engineer", "adventurer", "dreamer"
+];
 
 export function randomUsername() {
-  return generateUsername("", 3, 20); 
+  const verb = verbs[Math.floor(Math.random() * verbs.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  const randomNum = Math.floor(Math.random() * 1000);
+  return `${verb}${noun}${randomNum}`;
 }

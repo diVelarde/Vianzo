@@ -5,8 +5,7 @@
 
 # Firebase
 serviceAccountKey.json
-/comfig/Lalaland.json
-/comfig/whispernet-a172b.json
+/config
 
 # Dependencies
 /node_modules
